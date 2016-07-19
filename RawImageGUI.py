@@ -76,13 +76,15 @@ class MainGUI(tk.Frame):
                 self.controlGUI.statusVar.set('STATUS_CALIBRATING')
                 self.update_idletasks()
                 self.wlbt.calibrate()
-            self.canvasGUI.setGrid(*self.wlbt.getRawImageSliceDimensions())
+            self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
+            self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
             self.startCycles()
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
     def startCycles(self):
         self.controlGUI.statusVar.set('STATUS_SCANNING')
-        self.canvasGUI.update(self.wlbt.triggerAndGetRawImageSlice())
+        rawImage = self.wlbt.triggerAndGetRawImageSlice()
+        self.canvasGUI.update(rawImage, self.lenOfPhi, self.lenOfR)
         self.controlGUI.fpsVar.set(self.wlbt.getFps())
         self.cyclesId = self.after_idle(self.startCycles)
 
@@ -197,10 +199,10 @@ class CanvasGUI(tk.LabelFrame):
         self.cells = [[self.canvas.create_rectangle(recWidth*col,
             recHeight*row, recWidth*(col+1), recHeight*(row+1), width=0)
             for col in range(sizeY)] for row in range(sizeX)]
-    def update(self, rawImage):
-        for i in range(len(rawImage)):
-            for j in range(len(rawImage[0])):
-                self.canvas.itemconfigure(self.cells[i][j],
+    def update(self, rawImage, lenOfPhi, lenOfR):
+        for i in range(lenOfPhi):
+            for j in range(lenOfR):
+                self.canvas.itemconfigure(self.cells[lenOfPhi-i-1][j],
                     fill='#'+COLORS[rawImage[i][j]])
 
 class Walabot:
