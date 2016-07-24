@@ -1,7 +1,7 @@
 from __future__ import print_function
 from imp import load_source
-from os.path import join
-from sys import platform
+from os.path import join, dirname
+from sys import platform, argv
 from string import digits
 try: import Tkinter as tk
 except: import tkinter as tk
@@ -249,14 +249,18 @@ class Walabot:
     def getFps(self):
         return int(self.wlbt.GetAdvancedParameter('FrameRate'))
 
-def startApp():
-    root = tk.Tk()
+def configureWindow(root):
     root.title('Walabot - Raw Image Slice Example')
-    iconFile = tk.PhotoImage(file='RawImageGUI-icon.png')
+    iconPath = join(dirname(argv[0]), 'RawImageGUI-icon.png')
+    iconFile = tk.PhotoImage(file=iconPath)
     root.tk.call('wm', 'iconphoto', root._w, iconFile) # set app icon
     root.geometry('+{}+{}'.format(APP_X, APP_Y))
     root.resizable(width=False, height=False)
     root.option_add('*Font', 'TkFixedFont')
+
+def startApp():
+    root = tk.Tk()
+    configureWindow(root)
     MainGUI(root).pack()
     root.mainloop()
 
