@@ -128,7 +128,7 @@ class ConfigGUI(tk.LabelFrame):
         num = float(num)
         if num < minValue or num > maxValue:
             self.alertForInvalidValue(entry); return
-        entry.config(fg='SystemWindowText')
+        entry.config(fg='gray1')
     def alertForInvalidValue(self, entry):
         entry.config(fg='#'+COLORS[235])
     def setMtiVar(self, line):
