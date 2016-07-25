@@ -2,12 +2,9 @@ from __future__ import print_function
 from imp import load_source
 from os.path import join, dirname
 from sys import platform, argv
-from string import digits
 try: import Tkinter as tk
 except: import tkinter as tk
 
-APP_X, APP_Y = 50, 50
-CANVAS_WIDTH, CANVAS_HEIGHT = 500, 500
 COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "00009F", "0000A3", "0000A7", "0000AB", "0000AF", "0000B3", "0000B7",
     "0000BB", "0000BF", "0000C3", "0000C7", "0000CB", "0000CF", "0000D3",
@@ -45,16 +42,18 @@ COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "C30000", "BF0000", "BB0000", "B70000", "B30000", "AF0000", "AB0000",
     "A70000", "A30000", "9F0000", "9B0000", "970000", "930000", "8F0000",
     "8B0000", "870000", "830000", "7F0000"]
-RMIN_CONFIG = ('rMin', 1, 1000, 10)
-RMAX_CONFIG = ('rMax', 1, 1000, 100)
-RRES_CONFIG = ('rRes', 0.1, 10, 2)
-TMIN_CONFIG = ('thetaMin', -90, 90, -20)
-TMAX_CONFIG = ('thetaMax', -90, 90, 20)
-TRES_CONFIG = ('thetaRes', 0.1, 10, 10)
-PMIN_CONFIG = ('phiMin', -90, 90, -45)
-PMAX_CONFIG = ('phiMax', -90, 90, 45)
-PRES_CONFIG = ('phiRes', 0.1, 10, 2)
-THLD_CONFIG = ('threshold', 0.1, 100, 15)
+APP_X, APP_Y = 50, 50
+CANVAS_WIDTH, CANVAS_HEIGHT = 500, 500
+RMIN_CONFIG = ('rMin', 1, 1000, 10.0)
+RMAX_CONFIG = ('rMax', 1, 1000, 100.0)
+RRES_CONFIG = ('rRes', 0.1, 10, 2.0)
+TMIN_CONFIG = ('thetaMin', -90, 90, -20.0)
+TMAX_CONFIG = ('thetaMax', -90, 90, 20.0)
+TRES_CONFIG = ('thetaRes', 0.1, 10, 10.0)
+PMIN_CONFIG = ('phiMin', -90, 90, -45.0)
+PMAX_CONFIG = ('phiMax', -90, 90, 45.0)
+PRES_CONFIG = ('phiRes', 0.1, 10, 2.0)
+THLD_CONFIG = ('threshold', 0.1, 100, 15.0)
 
 class MainGUI(tk.Frame):
     def __init__(self, master):
@@ -72,13 +71,14 @@ class MainGUI(tk.Frame):
             self.update_idletasks()
             params = self.configGUI.getParams()
             self.wlbt.setParams(*params)
+            self.configGUI.setParams(*self.wlbt.getArenaParams())
             if not params[4]: # equals: if not mtiMode
                 self.controlGUI.statusVar.set('STATUS_CALIBRATING')
                 self.update_idletasks()
                 self.wlbt.calibrate()
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
             self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
-            self.startCycles()
+            self.startCycles() # TODO: lock parameters edit from now until stop
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
     def startCycles(self):
@@ -111,7 +111,7 @@ class ConfigGUI(tk.LabelFrame):
         tk.Label(line, text=varValue+' = ').pack(side=tk.LEFT)
         strVar = tk.StringVar()
         strVar.set(defaultValue)
-        entry = tk.Entry(line, width=4, textvariable=strVar)
+        entry = tk.Entry(line, width=6, textvariable=strVar)
         entry.pack(side=tk.LEFT)
         strVar.trace('w', lambda a, b, c,
             strVar=strVar: self.validate(strVar, entry, minValue, maxValue))
@@ -120,17 +120,13 @@ class ConfigGUI(tk.LabelFrame):
         return strVar
     def validate(self, strVar, entry, minValue, maxValue):
         num = strVar.get()
-        if not num:
-            self.alertForInvalidValue(entry); return
-        for digit in num:
-            if digit not in digits:
-                self.alertForInvalidValue(entry); return
-        num = float(num)
-        if num < minValue or num > maxValue:
-            self.alertForInvalidValue(entry); return
-        entry.config(fg='gray1')
-    def alertForInvalidValue(self, entry):
-        entry.config(fg='#'+COLORS[235])
+        try:
+            num = float(num)
+            if num < minValue or num > maxValue:
+                entry.config(fg='#'+COLORS[235]); return
+            entry.config(fg='gray1')
+        except ValueError:
+            entry.config(fg='#'+COLORS[235]); return
     def setMtiVar(self, line):
         tk.Label(line, text='mti = ').pack(side=tk.LEFT)
         mtiVar = tk.BooleanVar()
@@ -140,17 +136,48 @@ class ConfigGUI(tk.LabelFrame):
         rTrue.pack(side=tk.LEFT)
         rFalse.pack(side=tk.LEFT)
         return mtiVar
-    def setThresholdLine(self, line, lineText):
-        tk.Label(line, text=lineText).pack(side=tk.LEFT)
-        entry = tk.Entry(line, width=4).pack(side=tk.LEFT)
-        tk.Label(line, text=')').pack(side=tk.LEFT)
-        return entry
     def getParams(self):
         rParams = (self.rMin.get(), self.rMax.get(), self.rRes.get())
         tParams = (self.tMin.get(), self.tMax.get(), self.tRes.get())
         pParams = (self.pMin.get(), self.pMax.get(), self.pRes.get())
         thldParam, mtiParam = self.thld.get(), self.mti.get()
         return rParams, tParams, pParams, thldParam, mtiParam
+    def setParams(self, rParams, thetaParams, phiParams, threshold):
+        self.rMin.set(rParams[0])
+        self.rMax.set(rParams[1])
+        self.rRes.set(rParams[2])
+        self.tMin.set(thetaParams[0])
+        self.tMax.set(thetaParams[1])
+        self.tRes.set(thetaParams[2])
+        self.pMin.set(phiParams[0])
+        self.pMax.set(phiParams[1])
+        self.pRes.set(phiParams[2])
+        self.thld.set(threshold)
+
+class ParameterGUI(tk.Frame):
+    def __init__(self, master, varValue, minValue, maxValue, defaultValue):
+        tk.Frame.__init__(self, master)
+        tk.Label(line, text=varValue+' = ').pack(side=tk.LEFT)
+        self.strVar = tk.StringVar()
+        self.strVar.set(defaultValue)
+        self.entry = tk.Entry(line, width=4, textvariable=strVar)
+        self.entry.pack(side=tk.LEFT)
+        self.strVar.trace('w', lambda a, b, c, strVar=self.strVar:
+            self.validate(strVar, entry, minValue, maxValue))
+        tk.Label(line, text=' value between '+str(minValue)).pack(side=tk.LEFT)
+        tk.Label(line, text='and '+str(maxValue)).pack(side=tk.LEFT)
+        self.minValue, self.maxValue = minValue, maxValue
+    def validate(self):
+        num = self.strVar.get()
+        if not num:
+            self.entry.config(fg='#'+COLORS[235]); return
+        for digit in num:
+            if digit not in digits:
+                self.entry.config(fg='#'+COLORS[235]); return
+        num = float(num)
+        if num < self.minValue or num > self.maxValue:
+            self.entry.config(fg='#'+COLORS[235]); return
+        self.entry.config(fg='gray1')
 
 class ControlGUI(tk.LabelFrame):
     def __init__(self, master):
@@ -237,6 +264,12 @@ class Walabot:
         else:
             self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_NONE)
         self.wlbt.Start()
+    def getArenaParams(self):
+        rParams = self.wlbt.GetArenaR()
+        thetaParams = self.wlbt.GetArenaTheta()
+        phiParams = self.wlbt.GetArenaPhi()
+        threshold = self.wlbt.GetThreshold()
+        return rParams, thetaParams, phiParams, threshold
     def calibrate(self):
         self.wlbt.StartCalibration()
         while self.wlbt.GetStatus()[0] == self.wlbt.STATUS_CALIBRATING:
