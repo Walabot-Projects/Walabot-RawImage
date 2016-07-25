@@ -78,6 +78,7 @@ class MainGUI(tk.Frame):
                 self.wlbt.calibrate()
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
             self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
+            self.configGUI.changeEntriesState('disabled')
             self.startCycles() # TODO: lock parameters edit from now until stop
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
@@ -130,6 +131,17 @@ class ConfigGUI(tk.LabelFrame):
         self.pMax.set(phiParams[1])
         self.pRes.set(phiParams[2])
         self.thld.set(threshold)
+    def changeEntriesState(self, state):
+        self.rMin.changeEntryState(state)
+        self.rMax.changeEntryState(state)
+        self.rRes.changeEntryState(state)
+        self.tMin.changeEntryState(state)
+        self.tMax.changeEntryState(state)
+        self.tRes.changeEntryState(state)
+        self.pMin.changeEntryState(state)
+        self.pMax.changeEntryState(state)
+        self.pRes.changeEntryState(state)
+        self.thld.changeEntryState(state)
 
 class ParameterGUI(tk.Frame):
     def __init__(self, master, varValue, minValue, maxValue, defaultValue):
@@ -157,6 +169,12 @@ class ParameterGUI(tk.Frame):
         return self.var.get()
     def set(self, value):
         self.var.set(value)
+    def changeEntryState(self, state):
+        """ Change the state of 'entry' according to the given state.
+            Arguments:
+                state       most be either 'normal' or 'disabled'
+        """
+        self.entry.configure(state=state)
 
 class MtiGUI(tk.Frame):
     def __init__(self, master):
@@ -205,6 +223,7 @@ class ControlGUI(tk.LabelFrame):
     def stop(self):
         if hasattr(self.master, 'cyclesId'):
             self.master.after_cancel(self.master.cyclesId)
+            self.master.configGUI.changeEntriesState('normal')
             self.statusVar.set('STATUS_IDLE')
 
 class CanvasGUI(tk.LabelFrame):
