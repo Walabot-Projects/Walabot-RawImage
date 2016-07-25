@@ -91,51 +91,28 @@ class MainGUI(tk.Frame):
 class ConfigGUI(tk.LabelFrame):
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Walabot Configuration')
-        self.lines = [self.setLines(self, i) for i in range(11)]
-        self.rMin = self.setVar(self.lines[0], *RMIN_CONFIG)
-        self.rMax = self.setVar(self.lines[1], *RMAX_CONFIG)
-        self.rRes = self.setVar(self.lines[2], *RRES_CONFIG)
-        self.tMin = self.setVar(self.lines[3], *TMIN_CONFIG)
-        self.tMax = self.setVar(self.lines[4], *TMAX_CONFIG)
-        self.tRes = self.setVar(self.lines[5], *TRES_CONFIG)
-        self.pMin = self.setVar(self.lines[6], *PMIN_CONFIG)
-        self.pMax = self.setVar(self.lines[7], *PMAX_CONFIG)
-        self.pRes = self.setVar(self.lines[8], *PRES_CONFIG)
-        self.thld = self.setVar(self.lines[9], *THLD_CONFIG)
-        self.mti = self.setMtiVar(self.lines[10])
-    def setLines(self, master, i):
-        frame = tk.Frame(master)
-        frame.grid(row=i, sticky=tk.W, pady=0)
-        return frame
-    def setVar(self, line, varValue, minValue, maxValue, defaultValue):
-        tk.Label(line, text=varValue+' = ').pack(side=tk.LEFT)
-        strVar = tk.StringVar()
-        strVar.set(defaultValue)
-        entry = tk.Entry(line, width=6, textvariable=strVar)
-        entry.pack(side=tk.LEFT)
-        strVar.trace('w', lambda a, b, c,
-            strVar=strVar: self.validate(strVar, entry, minValue, maxValue))
-        tk.Label(line, text=' value between '+str(minValue)).pack(side=tk.LEFT)
-        tk.Label(line, text='and '+str(maxValue)).pack(side=tk.LEFT)
-        return strVar
-    def validate(self, strVar, entry, minValue, maxValue):
-        num = strVar.get()
-        try:
-            num = float(num)
-            if num < minValue or num > maxValue:
-                entry.config(fg='#'+COLORS[235]); return
-            entry.config(fg='gray1')
-        except ValueError:
-            entry.config(fg='#'+COLORS[235]); return
-    def setMtiVar(self, line):
-        tk.Label(line, text='mti = ').pack(side=tk.LEFT)
-        mtiVar = tk.BooleanVar()
-        mtiVar.set(0)
-        rTrue = tk.Radiobutton(line, text='True', variable=mtiVar, value=1)
-        rFalse = tk.Radiobutton(line, text='False', variable=mtiVar, value=0)
-        rTrue.pack(side=tk.LEFT)
-        rFalse.pack(side=tk.LEFT)
-        return mtiVar
+        self.rMin = ParameterGUI(self, *RMIN_CONFIG)
+        self.rMax = ParameterGUI(self, *RMAX_CONFIG)
+        self.rRes = ParameterGUI(self, *RRES_CONFIG)
+        self.tMin = ParameterGUI(self, *TMIN_CONFIG)
+        self.tMax = ParameterGUI(self, *TMAX_CONFIG)
+        self.tRes = ParameterGUI(self, *TRES_CONFIG)
+        self.pMin = ParameterGUI(self, *PMIN_CONFIG)
+        self.pMax = ParameterGUI(self, *PMAX_CONFIG)
+        self.pRes = ParameterGUI(self, *PRES_CONFIG)
+        self.thld = ParameterGUI(self, *THLD_CONFIG)
+        self.mti = MtiGUI(self)
+        self.rMin.grid(row=0, sticky=tk.W)
+        self.rMax.grid(row=1, sticky=tk.W)
+        self.rRes.grid(row=2, sticky=tk.W)
+        self.tMin.grid(row=3, sticky=tk.W)
+        self.tMax.grid(row=4, sticky=tk.W)
+        self.tRes.grid(row=5, sticky=tk.W)
+        self.pMin.grid(row=6, sticky=tk.W)
+        self.pMax.grid(row=7, sticky=tk.W)
+        self.pRes.grid(row=8, sticky=tk.W)
+        self.thld.grid(row=9, sticky=tk.W)
+        self.mti.grid(row=10, sticky=tk.W)
     def getParams(self):
         rParams = (self.rMin.get(), self.rMax.get(), self.rRes.get())
         tParams = (self.tMin.get(), self.tMax.get(), self.tRes.get())
@@ -157,27 +134,44 @@ class ConfigGUI(tk.LabelFrame):
 class ParameterGUI(tk.Frame):
     def __init__(self, master, varValue, minValue, maxValue, defaultValue):
         tk.Frame.__init__(self, master)
-        tk.Label(line, text=varValue+' = ').pack(side=tk.LEFT)
-        self.strVar = tk.StringVar()
-        self.strVar.set(defaultValue)
-        self.entry = tk.Entry(line, width=4, textvariable=strVar)
-        self.entry.pack(side=tk.LEFT)
-        self.strVar.trace('w', lambda a, b, c, strVar=self.strVar:
-            self.validate(strVar, entry, minValue, maxValue))
-        tk.Label(line, text=' value between '+str(minValue)).pack(side=tk.LEFT)
-        tk.Label(line, text='and '+str(maxValue)).pack(side=tk.LEFT)
+        tk.Label(self, text=varValue+' = ').pack(side=tk.LEFT)
         self.minValue, self.maxValue = minValue, maxValue
+        self.var = tk.StringVar()
+        self.var.set(defaultValue)
+        self.entry = tk.Entry(self, width=6, textvariable=self.var)
+        self.entry.pack(side=tk.LEFT)
+        self.var.trace('w', lambda a, b, c, var=self.var:
+            self.validate())
+        tk.Label(self, text=' value between '+str(minValue)).pack(side=tk.LEFT)
+        tk.Label(self, text='and '+str(maxValue)).pack(side=tk.LEFT)
     def validate(self):
-        num = self.strVar.get()
-        if not num:
-            self.entry.config(fg='#'+COLORS[235]); return
-        for digit in num:
-            if digit not in digits:
+        num = self.var.get()
+        try:
+            num = float(num)
+            if num < self.minValue or num > self.maxValue:
                 self.entry.config(fg='#'+COLORS[235]); return
-        num = float(num)
-        if num < self.minValue or num > self.maxValue:
+            self.entry.config(fg='gray1')
+        except ValueError:
             self.entry.config(fg='#'+COLORS[235]); return
-        self.entry.config(fg='gray1')
+    def get(self):
+        return self.var.get()
+    def set(self, value):
+        self.var.set(value)
+
+class MtiGUI(tk.Frame):
+    def __init__(self, master):
+        tk.Frame.__init__(self, master)
+        tk.Label(self, text='mti = ').pack(side=tk.LEFT)
+        self.mtiVar = tk.BooleanVar()
+        self.mtiVar.set(0)
+        tk.Radiobutton(self, text='True', variable=self.mtiVar,
+            value=1).pack(side=tk.LEFT)
+        tk.Radiobutton(self, text='False', variable=self.mtiVar,
+            value=0).pack(side=tk.LEFT)
+    def get(self):
+        return self.mtiVar.get()
+    def set(self, value):
+        self.mtiVar.set(value)
 
 class ControlGUI(tk.LabelFrame):
     def __init__(self, master):
