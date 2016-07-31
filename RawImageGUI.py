@@ -79,7 +79,7 @@ class MainGUI(tk.Frame):
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
             self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
             self.configGUI.changeEntriesState('disabled')
-            self.startCycles() # TODO: lock parameters edit from now until stop
+            self.startCycles()
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
     def startCycles(self):
@@ -272,7 +272,7 @@ class Walabot:
             self.wlbt.SetThreshold(float(thld))
         except self.wlbt.WalabotError as err:
             self.master.controlGUI.errorVar.set(str(err))
-        if mtiMode == '0':
+        if mtiMode:
             self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_MTI)
         else:
             self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_NONE)
