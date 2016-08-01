@@ -2,8 +2,14 @@ from __future__ import print_function
 from imp import load_source
 from os.path import join, dirname
 from sys import platform, argv
-try: import Tkinter as tk
-except: import tkinter as tk
+try:
+    import Tkinter as tk
+except ImportError:
+    import tkinter as tk
+try:
+    range = xrange
+except NameError:
+    pass
 
 COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "00009F", "0000A3", "0000A7", "0000AB", "0000AF", "0000B3", "0000B7",
@@ -297,7 +303,7 @@ class Walabot:
 
 def configureWindow(root):
     root.title('Walabot - Raw Image Slice Example')
-    iconPath = join(dirname(argv[0]), 'RawImageGUI-icon.png')
+    iconPath = join(dirname(argv[0]), 'raw-image-slice-icon.png')
     iconFile = tk.PhotoImage(file=iconPath)
     root.tk.call('wm', 'iconphoto', root._w, iconFile) # set app icon
     root.geometry('+{}+{}'.format(APP_X, APP_Y))
