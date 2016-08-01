@@ -62,6 +62,7 @@ PRES_CONFIG = ('phiRes', 0.1, 10, 2.0)
 THLD_CONFIG = ('threshold', 0.1, 100, 15.0)
 
 class MainGUI(tk.Frame):
+
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         self.configGUI = ConfigGUI(self)
@@ -71,6 +72,7 @@ class MainGUI(tk.Frame):
         self.controlGUI.grid(row=1, column=0, sticky=(tk.EW, tk.S))
         self.canvasGUI.grid(row=0, column=1, rowspan=2)
         self.wlbt = Walabot(self)
+
     def startWlbt(self):
         if self.wlbt.isConnected():
             self.controlGUI.statusVar.set('STATUS_CONNECTED')
@@ -88,6 +90,7 @@ class MainGUI(tk.Frame):
             self.startCycles()
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
+
     def startCycles(self):
         self.controlGUI.statusVar.set('STATUS_SCANNING')
         rawImage = self.wlbt.triggerAndGetRawImageSlice()
@@ -96,6 +99,7 @@ class MainGUI(tk.Frame):
         self.cyclesId = self.after_idle(self.startCycles)
 
 class ConfigGUI(tk.LabelFrame):
+
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Walabot Configuration')
         self.rMin = ParameterGUI(self, *RMIN_CONFIG)
@@ -120,12 +124,14 @@ class ConfigGUI(tk.LabelFrame):
         self.pRes.grid(row=8, sticky=tk.W)
         self.thld.grid(row=9, sticky=tk.W)
         self.mti.grid(row=10, sticky=tk.W)
+
     def getParams(self):
         rParams = (self.rMin.get(), self.rMax.get(), self.rRes.get())
         tParams = (self.tMin.get(), self.tMax.get(), self.tRes.get())
         pParams = (self.pMin.get(), self.pMax.get(), self.pRes.get())
         thldParam, mtiParam = self.thld.get(), self.mti.get()
         return rParams, tParams, pParams, thldParam, mtiParam
+
     def setParams(self, rParams, thetaParams, phiParams, threshold):
         self.rMin.set(rParams[0])
         self.rMax.set(rParams[1])
@@ -137,6 +143,7 @@ class ConfigGUI(tk.LabelFrame):
         self.pMax.set(phiParams[1])
         self.pRes.set(phiParams[2])
         self.thld.set(threshold)
+
     def changeEntriesState(self, state):
         self.rMin.changeEntryState(state)
         self.rMax.changeEntryState(state)
@@ -150,6 +157,7 @@ class ConfigGUI(tk.LabelFrame):
         self.thld.changeEntryState(state)
 
 class ParameterGUI(tk.Frame):
+
     def __init__(self, master, varValue, minValue, maxValue, defaultValue):
         tk.Frame.__init__(self, master)
         tk.Label(self, text=varValue+' = ').pack(side=tk.LEFT)
@@ -162,6 +170,7 @@ class ParameterGUI(tk.Frame):
             self.validate())
         tk.Label(self, text=' value between '+str(minValue)).pack(side=tk.LEFT)
         tk.Label(self, text='and '+str(maxValue)).pack(side=tk.LEFT)
+
     def validate(self):
         num = self.var.get()
         try:
@@ -171,10 +180,13 @@ class ParameterGUI(tk.Frame):
             self.entry.config(fg='gray1')
         except ValueError:
             self.entry.config(fg='#'+COLORS[235]); return
+
     def get(self):
         return self.var.get()
+
     def set(self, value):
         self.var.set(value)
+
     def changeEntryState(self, state):
         """ Change the state of 'entry' according to the given state.
             Arguments:
@@ -183,6 +195,7 @@ class ParameterGUI(tk.Frame):
         self.entry.configure(state=state)
 
 class MtiGUI(tk.Frame):
+
     def __init__(self, master):
         tk.Frame.__init__(self, master)
         tk.Label(self, text='mti = ').pack(side=tk.LEFT)
@@ -192,12 +205,15 @@ class MtiGUI(tk.Frame):
             value=1).pack(side=tk.LEFT)
         tk.Radiobutton(self, text='False', variable=self.mtiVar,
             value=0).pack(side=tk.LEFT)
+
     def get(self):
         return self.mtiVar.get()
+
     def set(self, value):
         self.mtiVar.set(value)
 
 class ControlGUI(tk.LabelFrame):
+
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Control Panel')
         self.buttonsFrame = tk.Frame(self)
@@ -212,46 +228,57 @@ class ControlGUI(tk.LabelFrame):
         self.statusFrame.grid(row=1, columnspan=2, sticky=tk.W)
         self.errorFrame.grid(row=2, columnspan=2, sticky=tk.W)
         self.fpsFrame.grid(row=3, columnspan=2, sticky=tk.W)
+
     def setButtons(self, frame):
         runButton = tk.Button(frame, text='Start', command=self.start)
         stopButton = tk.Button(frame, text='Stop', command=self.stop)
         runButton.grid(row=0, column=0)
         stopButton.grid(row=0, column=1)
         return runButton, stopButton
+
     def setVar(self, frame, varText, default):
         strVar = tk.StringVar()
         strVar.set(default)
         tk.Label(frame, text=(varText).ljust(12)).grid(row=0, column=0)
         tk.Label(frame, textvariable=strVar).grid(row=0, column=1)
         return strVar
+
     def start(self):
         self.master.startWlbt()
+
     def stop(self):
         if hasattr(self.master, 'cyclesId'):
             self.master.after_cancel(self.master.cyclesId)
             self.master.configGUI.changeEntriesState('normal')
+            self.master.canvasGUI.reset()
             self.statusVar.set('STATUS_IDLE')
 
 class CanvasGUI(tk.LabelFrame):
+
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Raw Image Slice: Phi / R')
         self.canvas = tk.Canvas(self, width=CANVAS_WIDTH,
                 height=CANVAS_HEIGHT)
         self.canvas.pack()
         self.canvas.configure(background='#'+COLORS[0])
-        self.cells = []
+
     def setGrid(self, sizeX, sizeY):
         recHeight, recWidth = CANVAS_WIDTH/sizeX, CANVAS_HEIGHT/sizeY
         self.cells = [[self.canvas.create_rectangle(recWidth*col,
             recHeight*row, recWidth*(col+1), recHeight*(row+1), width=0)
             for col in range(sizeY)] for row in range(sizeX)]
+
     def update(self, rawImage, lenOfPhi, lenOfR):
         for i in range(lenOfPhi):
             for j in range(lenOfR):
                 self.canvas.itemconfigure(self.cells[lenOfPhi-i-1][j],
                     fill='#'+COLORS[rawImage[i][j]])
 
+    def reset(self):
+        self.canvas.delete('all')
+
 class Walabot:
+
     def __init__(self, master):
         self.master = master
         if platform == 'win32': # for windows
@@ -262,6 +289,7 @@ class Walabot:
         self.wlbt = load_source('WalabotAPI', join(path, 'WalabotAPI.py'))
         self.wlbt.Init()
         self.wlbt.SetSettingsFolder()
+
     def isConnected(self):
         try:
             self.wlbt.ConnectAny()
@@ -269,6 +297,7 @@ class Walabot:
             if err.code == 19: # 'WALABOT_INSTRUMENT_NOT_FOUND'
                 return False
         return True
+
     def setParams(self, rParams, thetaParams, phiParams, thld, mtiMode):
         self.wlbt.SetProfile(self.wlbt.PROF_SENSOR)
         try:
@@ -283,21 +312,26 @@ class Walabot:
         else:
             self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_NONE)
         self.wlbt.Start()
+
     def getArenaParams(self):
         rParams = self.wlbt.GetArenaR()
         thetaParams = self.wlbt.GetArenaTheta()
         phiParams = self.wlbt.GetArenaPhi()
         threshold = self.wlbt.GetThreshold()
         return rParams, thetaParams, phiParams, threshold
+
     def calibrate(self):
         self.wlbt.StartCalibration()
         while self.wlbt.GetStatus()[0] == self.wlbt.STATUS_CALIBRATING:
             self.wlbt.Trigger()
+
     def getRawImageSliceDimensions(self):
         return self.wlbt.GetRawImageSlice()[1:3]
+
     def triggerAndGetRawImageSlice(self):
         self.wlbt.Trigger()
         return self.wlbt.GetRawImageSlice()[0]
+
     def getFps(self):
         return int(self.wlbt.GetAdvancedParameter('FrameRate'))
 
