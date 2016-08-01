@@ -2,14 +2,10 @@ from __future__ import print_function
 from imp import load_source
 from os.path import join, dirname
 from sys import platform, argv
-try:
-    import Tkinter as tk
-except ImportError:
-    import tkinter as tk
-try:
-    range = xrange
-except NameError:
-    pass
+try: import Tkinter as tk
+except ImportError: import tkinter as tk
+try: range = xrange
+except NameError: pass
 
 COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "00009F", "0000A3", "0000A7", "0000AB", "0000AF", "0000B3", "0000B7",
@@ -195,8 +191,14 @@ class ParameterGUI(tk.Frame):
         self.entry.configure(state=state)
 
 class MtiGUI(tk.Frame):
+    """ This class is designed to control the mti parameter inside the
+        ConfigGUI instance.
+    """
 
     def __init__(self, master):
+        """ Initialize the mti parameter, including the label, variable and
+            radiobuttons.
+        """
         tk.Frame.__init__(self, master)
         tk.Label(self, text='mti = ').pack(side=tk.LEFT)
         self.mtiVar = tk.BooleanVar()
@@ -207,14 +209,25 @@ class MtiGUI(tk.Frame):
             value=0).pack(side=tk.LEFT)
 
     def get(self):
+        """ Returns the variable value (the entry value).
+            Returns:
+                mti         True / False according to the mti mode the was set
+                            by the user.
+        """
         return self.mtiVar.get()
 
     def set(self, value):
+        """ Sets the variable value (entry value), given a value.
+        """
         self.mtiVar.set(value)
 
 class ControlGUI(tk.LabelFrame):
+    """ This class is designed to control the control area of the app.
+    """
 
     def __init__(self, master):
+        """ Initialize the buttons and the data labels.
+        """
         tk.LabelFrame.__init__(self, master, text='Control Panel')
         self.buttonsFrame = tk.Frame(self)
         self.runButton, self.stopButton = self.setButtons(self.buttonsFrame)
@@ -230,6 +243,8 @@ class ControlGUI(tk.LabelFrame):
         self.fpsFrame.grid(row=3, columnspan=2, sticky=tk.W)
 
     def setButtons(self, frame):
+        """ Initialize the 'Start' and 'Stop' buttons.
+        """
         runButton = tk.Button(frame, text='Start', command=self.start)
         stopButton = tk.Button(frame, text='Stop', command=self.stop)
         runButton.grid(row=0, column=0)
@@ -237,6 +252,8 @@ class ControlGUI(tk.LabelFrame):
         return runButton, stopButton
 
     def setVar(self, frame, varText, default):
+        """ Initialize the data frames.
+        """
         strVar = tk.StringVar()
         strVar.set(default)
         tk.Label(frame, text=(varText).ljust(12)).grid(row=0, column=0)
@@ -244,9 +261,15 @@ class ControlGUI(tk.LabelFrame):
         return strVar
 
     def start(self):
+        """ Applied when 'Start' button is pressed. Starts the Walabot and
+            the app cycles.
+        """
         self.master.startWlbt()
 
     def stop(self):
+        """ Applied when 'Stop' button in pressed. Stops the Walabot and the
+            app cycles.
+        """
         if hasattr(self.master, 'cyclesId'):
             self.master.after_cancel(self.master.cyclesId)
             self.master.configGUI.changeEntriesState('normal')
@@ -254,8 +277,12 @@ class ControlGUI(tk.LabelFrame):
             self.statusVar.set('STATUS_IDLE')
 
 class CanvasGUI(tk.LabelFrame):
+    """ This class is designed to control the canvas area of the app.
+    """
 
     def __init__(self, master):
+        """ Initialize the label-frame and canvas.
+        """
         tk.LabelFrame.__init__(self, master, text='Raw Image Slice: Phi / R')
         self.canvas = tk.Canvas(self, width=CANVAS_WIDTH,
                 height=CANVAS_HEIGHT)
@@ -263,23 +290,44 @@ class CanvasGUI(tk.LabelFrame):
         self.canvas.configure(background='#'+COLORS[0])
 
     def setGrid(self, sizeX, sizeY):
+        """ Set the canvas components (rectangles), given the size of the axes.
+            Arguments:
+                sizeX       Number of cells in Phi axis.
+                sizeY       Number of cells in R axis.
+        """
         recHeight, recWidth = CANVAS_WIDTH/sizeX, CANVAS_HEIGHT/sizeY
         self.cells = [[self.canvas.create_rectangle(recWidth*col,
             recHeight*row, recWidth*(col+1), recHeight*(row+1), width=0)
             for col in range(sizeY)] for row in range(sizeX)]
 
     def update(self, rawImage, lenOfPhi, lenOfR):
+        """ Updates the canvas cells colors acorrding to a given rawImage
+            matrix and it's dimensions.
+            Arguments:
+                rawImage    A 2D matrix contains the current rawImage slice.
+                lenOfPhi    Number of cells in Phi axis.
+                lenOfR      Number of cells in R axis.
+        """
         for i in range(lenOfPhi):
             for j in range(lenOfR):
                 self.canvas.itemconfigure(self.cells[lenOfPhi-i-1][j],
                     fill='#'+COLORS[rawImage[i][j]])
 
     def reset(self):
+        """ Deletes all the canvas components (colored rectangles).
+        """
         self.canvas.delete('all')
 
 class Walabot:
+    """ This class is designed to control Walabot device using the Walabot SDK.
+    """
 
     def __init__(self, master):
+        """ Initialize the Walabot SDK, importing the Walabot module,
+            set the settings folder path and declare the 'distance' lambda
+            function which calculates the distance of a 3D point from the
+            origin of axes.
+        """
         self.master = master
         if platform == 'win32': # for windows
             path = join('C:/', 'Program Files', 'Walabot', 'WalabotSDK',
@@ -291,6 +339,10 @@ class Walabot:
         self.wlbt.SetSettingsFolder()
 
     def isConnected(self):
+        """ Connect the Walabot, return True/False according to the result.
+            Returns:
+                isConnected     'True' if connected, 'False' if not
+        """
         try:
             self.wlbt.ConnectAny()
         except self.wlbt.WalabotError as err:
@@ -299,6 +351,9 @@ class Walabot:
         return True
 
     def setParams(self, rParams, thetaParams, phiParams, thld, mtiMode):
+        """ Set the Walabot's profile, arena parameters, and filter type.
+            Then start the walabot using Start() function.
+        """
         self.wlbt.SetProfile(self.wlbt.PROF_SENSOR)
         try:
             self.wlbt.SetArenaR(*tuple(map(float, rParams)))
@@ -314,6 +369,11 @@ class Walabot:
         self.wlbt.Start()
 
     def getArenaParams(self):
+        """ Returns the Walabot parameters from the Walabot SDK.
+            Returns:
+                params      rParams, thetaParams, phiParams, threshold as
+                            given from the Walabot SDK.
+        """
         rParams = self.wlbt.GetArenaR()
         thetaParams = self.wlbt.GetArenaTheta()
         phiParams = self.wlbt.GetArenaPhi()
@@ -321,21 +381,39 @@ class Walabot:
         return rParams, thetaParams, phiParams, threshold
 
     def calibrate(self):
+        """ Calibrates the Walabot.
+        """
         self.wlbt.StartCalibration()
         while self.wlbt.GetStatus()[0] == self.wlbt.STATUS_CALIBRATING:
             self.wlbt.Trigger()
 
     def getRawImageSliceDimensions(self):
+        """ Returns the dimensions of the rawImage 2D list given from the
+            Walabot SDK.
+            Returns:
+                lenOfPhi    Num of cells in Phi axis.
+                lenOfR      Num of cells in Theta axis.
+        """
         return self.wlbt.GetRawImageSlice()[1:3]
 
     def triggerAndGetRawImageSlice(self):
+        """ Returns the rawImage given from the Walabot SDK.
+            Returns:
+                rawImage    A rawImage list as described in the Walabot docs.
+        """
         self.wlbt.Trigger()
         return self.wlbt.GetRawImageSlice()[0]
 
     def getFps(self):
+        """ Returns the Walabot current fps as given from the Walabot SDK.
+            Returns:
+                fpsVar      Number of frames per seconds.
+        """
         return int(self.wlbt.GetAdvancedParameter('FrameRate'))
 
 def configureWindow(root):
+    """ Set configurations for the GUI window, such as icon, title, etc.
+    """
     root.title('Walabot - Raw Image Slice Example')
     iconPath = join(dirname(argv[0]), 'raw-image-slice-icon.png')
     iconFile = tk.PhotoImage(file=iconPath)
@@ -345,6 +423,8 @@ def configureWindow(root):
     root.option_add('*Font', 'TkFixedFont')
 
 def startApp():
+    """ Main function. Create and inint the MainGUI class, which runs the app.
+    """
     root = tk.Tk()
     configureWindow(root)
     MainGUI(root).pack()
