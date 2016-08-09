@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 from imp import load_source
 from os.path import join, dirname
 from sys import platform, argv
@@ -46,16 +46,6 @@ COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "8B0000", "870000", "830000", "7F0000"]
 APP_X, APP_Y = 50, 50
 CANVAS_WIDTH, CANVAS_HEIGHT = 500, 500
-RMIN_CONFIG = ('rMin', 1, 1000, 10.0)
-RMAX_CONFIG = ('rMax', 1, 1000, 100.0)
-RRES_CONFIG = ('rRes', 0.1, 10, 2.0)
-TMIN_CONFIG = ('thetaMin', -90, 90, -20.0)
-TMAX_CONFIG = ('thetaMax', -90, 90, 20.0)
-TRES_CONFIG = ('thetaRes', 0.1, 10, 10.0)
-PMIN_CONFIG = ('phiMin', -90, 90, -45.0)
-PMAX_CONFIG = ('phiMax', -90, 90, 45.0)
-PRES_CONFIG = ('phiRes', 0.1, 10, 2.0)
-THLD_CONFIG = ('threshold', 0.1, 100, 15.0)
 
 class MainGUI(tk.Frame):
 
@@ -98,16 +88,16 @@ class ConfigGUI(tk.LabelFrame):
 
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Walabot Configuration')
-        self.rMin = ParameterGUI(self, *RMIN_CONFIG)
-        self.rMax = ParameterGUI(self, *RMAX_CONFIG)
-        self.rRes = ParameterGUI(self, *RRES_CONFIG)
-        self.tMin = ParameterGUI(self, *TMIN_CONFIG)
-        self.tMax = ParameterGUI(self, *TMAX_CONFIG)
-        self.tRes = ParameterGUI(self, *TRES_CONFIG)
-        self.pMin = ParameterGUI(self, *PMIN_CONFIG)
-        self.pMax = ParameterGUI(self, *PMAX_CONFIG)
-        self.pRes = ParameterGUI(self, *PRES_CONFIG)
-        self.thld = ParameterGUI(self, *THLD_CONFIG)
+        self.rMin = ParameterGUI(self, 'rMin', 1, 1000, 10.0)
+        self.rMax = ParameterGUI(self, 'rMax', 1, 1000, 100.0)
+        self.rRes = ParameterGUI(self, 'rRes', 0.1, 10, 2.0)
+        self.tMin = ParameterGUI(self, 'thetaMin', -90, 90, -20.0)
+        self.tMax = ParameterGUI(self, 'thetaMax', -90, 90, 20.0)
+        self.tRes = ParameterGUI(self, 'thetaRes', 0.1, 10, 10.0)
+        self.pMin = ParameterGUI(self, 'phiMin', -90, 90, -45.0)
+        self.pMax = ParameterGUI(self, 'phiMax', -90, 90, 45.0)
+        self.pRes = ParameterGUI(self, 'phiRes', 0.1, 10, 2.0)
+        self.thld = ParameterGUI(self, 'threshold', 0.1, 100, 15.0)
         self.mti = MtiGUI(self)
         self.rMin.grid(row=0, sticky=tk.W)
         self.rMax.grid(row=1, sticky=tk.W)
@@ -153,8 +143,13 @@ class ConfigGUI(tk.LabelFrame):
         self.thld.changeEntryState(state)
 
 class ParameterGUI(tk.Frame):
+    """ This class is designed to control the parameters inside the
+        ConfigGUI instance.
+    """
 
     def __init__(self, master, varValue, minValue, maxValue, defaultValue):
+        """ Initialize the parameter, including the label, variable and entry.
+        """
         tk.Frame.__init__(self, master)
         tk.Label(self, text=varValue+' = ').pack(side=tk.LEFT)
         self.minValue, self.maxValue = minValue, maxValue
@@ -168,6 +163,9 @@ class ParameterGUI(tk.Frame):
         tk.Label(self, text='and '+str(maxValue)).pack(side=tk.LEFT)
 
     def validate(self):
+        """ Check the variable value. If it's not a number / not in the allowed
+            parameter range - change the entry font color.
+        """
         num = self.var.get()
         try:
             num = float(num)
@@ -178,9 +176,13 @@ class ParameterGUI(tk.Frame):
             self.entry.config(fg='#'+COLORS[235]); return
 
     def get(self):
+        """ Returns the variable value (the entry value).
+        """
         return self.var.get()
 
     def set(self, value):
+        """ Sets the variable value (entry value), given a value.
+        """
         self.var.set(value)
 
     def changeEntryState(self, state):
