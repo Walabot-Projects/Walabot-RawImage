@@ -141,6 +141,7 @@ class ConfigGUI(tk.LabelFrame):
         self.pMax.changeEntryState(state)
         self.pRes.changeEntryState(state)
         self.thld.changeEntryState(state)
+        self.mti.changeButtonsState(state)
 
 class ParameterGUI(tk.Frame):
     """ This class is designed to control the parameters inside the
@@ -205,10 +206,12 @@ class MtiGUI(tk.Frame):
         tk.Label(self, text='mti = ').pack(side=tk.LEFT)
         self.mtiVar = tk.BooleanVar()
         self.mtiVar.set(0)
-        tk.Radiobutton(self, text='True', variable=self.mtiVar,
-            value=1).pack(side=tk.LEFT)
-        tk.Radiobutton(self, text='False', variable=self.mtiVar,
-            value=0).pack(side=tk.LEFT)
+        self.true = tk.Radiobutton(self, text='True', variable=self.mtiVar,
+            value=1)
+        self.false = tk.Radiobutton(self, text='False', variable=self.mtiVar,
+            value=0)
+        self.true.pack(side=tk.LEFT)
+        self.false.pack(side=tk.LEFT)
 
     def get(self):
         """ Returns the variable value (the entry value).
@@ -222,6 +225,10 @@ class MtiGUI(tk.Frame):
         """ Sets the variable value (entry value), given a value.
         """
         self.mtiVar.set(value)
+
+    def changeButtonsState(self, state):
+        self.true.configure(state=state)
+        self.false.configure(state=state)
 
 class ControlGUI(tk.LabelFrame):
     """ This class is designed to control the control area of the app.
