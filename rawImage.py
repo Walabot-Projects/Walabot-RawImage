@@ -424,7 +424,7 @@ def configureWindow(root):
     """ Set configurations for the GUI window, such as icon, title, etc.
     """
     root.title('Walabot - Raw Image Slice Example')
-    iconPath = join(dirname(argv[0]), 'raw-image-slice-icon.png')
+    iconPath = join(dirname(argv[0]), 'walabot-icon.png')
     iconFile = tk.PhotoImage(file=iconPath)
     root.tk.call('wm', 'iconphoto', root._w, iconFile) # set app icon
     root.geometry('+{}+{}'.format(APP_X, APP_Y))
