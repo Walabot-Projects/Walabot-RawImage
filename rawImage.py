@@ -46,8 +46,9 @@ COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "C30000", "BF0000", "BB0000", "B70000", "B30000", "AF0000", "AB0000",
     "A70000", "A30000", "9F0000", "9B0000", "970000", "930000", "8F0000",
     "8B0000", "870000", "830000", "7F0000"]
-APP_X, APP_Y = 50, 50
-CANVAS_WIDTH, CANVAS_HEIGHT = 500, 500
+
+APP_X, APP_Y = 50, 50 # location of top-left corner of window
+CANVAS_LENGTH = 650 # in pixels
 
 class MainGUI(tk.Frame):
 
@@ -295,8 +296,8 @@ class CanvasGUI(tk.LabelFrame):
         """ Initialize the label-frame and canvas.
         """
         tk.LabelFrame.__init__(self, master, text='Raw Image Slice: Phi / R')
-        self.canvas = tk.Canvas(self, width=CANVAS_WIDTH,
-                height=CANVAS_HEIGHT)
+        self.canvas = tk.Canvas(self, width=CANVAS_LENGTH,
+                height=CANVAS_LENGTH)
         self.canvas.pack()
         self.canvas.configure(background='#'+COLORS[0])
 
@@ -306,7 +307,7 @@ class CanvasGUI(tk.LabelFrame):
                 sizeX       Number of cells in Phi axis.
                 sizeY       Number of cells in R axis.
         """
-        recHeight, recWidth = CANVAS_WIDTH/sizeX, CANVAS_HEIGHT/sizeY
+        recHeight, recWidth = CANVAS_LENGTH/sizeX, CANVAS_LENGTH/sizeY
         self.cells = [[self.canvas.create_rectangle(recWidth*col,
             recHeight*row, recWidth*(col+1), recHeight*(row+1), width=0)
             for col in range(sizeY)] for row in range(sizeX)]
