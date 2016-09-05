@@ -413,23 +413,21 @@ class Walabot:
         """
         return int(self.wlbt.GetAdvancedParameter('FrameRate'))
 
-def configureWindow(root):
-    """ Set configurations for the GUI window, such as icon, title, etc.
-    """
-    root.title('Walabot - Raw Image Slice Example')
-    iconFile = tk.PhotoImage(file="walabot-icon.png")
-    root.tk.call('wm', 'iconphoto', root._w, iconFile) # set app icon
-    root.geometry('+{}+{}'.format(APP_X, APP_Y))
-    root.resizable(width=False, height=False)
-    root.option_add('*Font', 'TkFixedFont')
-
-def startApp():
-    """ Main function. Create and inint the MainGUI class, which runs the app.
+def rawImage():
+    """ Main app function. Init the main app class, configure the window
+        and start the mainloop.
     """
     root = tk.Tk()
-    configureWindow(root)
-    MainGUI(root).pack()
+    root.title('Walabot - Raw Image Slice Example')
+    iconFile = tk.PhotoImage(file="walabot-icon.png")
+    root.tk.call("wm", "iconphoto", root._w, iconFile) # set app icon
+    root.option_add("*Font", "TkFixedFont")
+    MainGUI(root).pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    root.geometry("+{}+{}".format(APP_X, APP_Y)) # set window location
+    root.update()
+    root.minsize(width=root.winfo_reqwidth(), height=root.winfo_reqheight())
     root.mainloop()
 
+
 if __name__ == '__main__':
-    startApp()
+    rawImage()
