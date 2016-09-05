@@ -1,11 +1,13 @@
 from __future__ import print_function, division
-from imp import load_source
-from os.path import join, dirname
-from sys import platform, argv
-try: import Tkinter as tk
-except ImportError: import tkinter as tk
-try: range = xrange
-except NameError: pass
+import WalabotAPI as wlbt
+try: # for Python 2
+    import Tkinter as tk
+except ImportError: # for Python 3
+    import tkinter as tk
+try: # for Python 2
+    range = xrange
+except NameError:
+    pass
 
 COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "00009F", "0000A3", "0000A7", "0000AB", "0000AF", "0000B3", "0000B7",
@@ -332,18 +334,9 @@ class Walabot:
     """
 
     def __init__(self, master):
-        """ Initialize the Walabot SDK, importing the Walabot module,
-            set the settings folder path and declare the 'distance' lambda
-            function which calculates the distance of a 3D point from the
-            origin of axes.
+        """ Initialize the Walabot SDK.
         """
-        self.master = master
-        if platform == 'win32': # for windows
-            path = join('C:/', 'Program Files', 'Walabot', 'WalabotSDK',
-                'python')
-        else: # for linux, raspberry pi, etc.
-            path = join('/usr', 'share', 'walabot', 'python')
-        self.wlbt = load_source('WalabotAPI', join(path, 'WalabotAPI.py'))
+        self.wlbt = wlbt
         self.wlbt.Init()
         self.wlbt.SetSettingsFolder()
 
@@ -424,8 +417,7 @@ def configureWindow(root):
     """ Set configurations for the GUI window, such as icon, title, etc.
     """
     root.title('Walabot - Raw Image Slice Example')
-    iconPath = join(dirname(argv[0]), 'walabot-icon.png')
-    iconFile = tk.PhotoImage(file=iconPath)
+    iconFile = tk.PhotoImage(file="walabot-icon.png")
     root.tk.call('wm', 'iconphoto', root._w, iconFile) # set app icon
     root.geometry('+{}+{}'.format(APP_X, APP_Y))
     root.resizable(width=False, height=False)
