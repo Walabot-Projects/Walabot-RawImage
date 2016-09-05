@@ -62,10 +62,10 @@ class RawImageApp(tk.Frame):
         self.canvasPanel = CanvasPanel(self)
         self.wlbtPanel = WalabotPanel(self)
         self.ctrlPanel = ControlPanel(self)
-        self.canvasGUI.pack(side=tk.RIGHT, anchor=tk.NE)
+        self.canvasPanel.pack(side=tk.RIGHT, anchor=tk.NE)
         self.wlbtPanel.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
         self.ctrlPanel.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
-        self.wlbt = Walabot(self)
+        self.wlbt = Walabot()
 
     def initAppLoop(self):
         if self.wlbt.isConnected():
@@ -79,7 +79,7 @@ class RawImageApp(tk.Frame):
                 self.update_idletasks()
                 self.wlbt.calibrate()
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
-            self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
+            self.canvasPanel.setGrid(self.lenOfPhi, self.lenOfR)
             self.wlbtPanel.changeEntriesState('disabled')
             self.loop()
         else:
@@ -88,7 +88,7 @@ class RawImageApp(tk.Frame):
     def loop(self):
         self.ctrlPanel.statusVar.set('STATUS_SCANNING')
         rawImage = self.wlbt.triggerAndGetRawImageSlice()
-        self.canvasGUI.update(rawImage, self.lenOfPhi, self.lenOfR)
+        self.canvasPanel.update(rawImage, self.lenOfPhi, self.lenOfR)
         self.ctrlPanel.fpsVar.set(self.wlbt.getFps())
         self.cyclesId = self.after_idle(self.loop)
 
@@ -130,7 +130,7 @@ class WalabotPanel(tk.LabelFrame):
         def get(self):
             """ Returns the entry value as a float.
             """
-            return self.var.get()
+            return float(self.var.get())
 
         def set(self, value):
             """ Sets the entry value according to a given one.
@@ -271,7 +271,7 @@ class ControlPanel(tk.LabelFrame):
         if hasattr(self.master, 'cyclesId'):
             self.master.after_cancel(self.master.cyclesId)
             self.master.wlbtPanel.changeEntriesState('normal')
-            self.master.canvasGUI.reset()
+            self.master.canvasPanel.reset()
             self.statusVar.set('STATUS_IDLE')
 
 
@@ -319,44 +319,37 @@ class CanvasPanel(tk.LabelFrame):
 
 
 class Walabot:
-    """ This class is designed to control Walabot device using the Walabot SDK.
+    """ Control the Walabot using the Walabot API.
     """
 
-    def __init__(self, master):
-        """ Initialize the Walabot SDK.
+    def __init__(self):
+        """ Init the Walabot API.
         """
         self.wlbt = wlbt
         self.wlbt.Init()
         self.wlbt.SetSettingsFolder()
 
     def isConnected(self):
-        """ Connect the Walabot, return True/False according to the result.
-            Returns:
-                isConnected     'True' if connected, 'False' if not
+        """ Try to connect the Walabot device. Return True/False accordingly.
         """
         try:
             self.wlbt.ConnectAny()
         except self.wlbt.WalabotError as err:
-            if err.code == 19: # 'WALABOT_INSTRUMENT_NOT_FOUND'
+            if err.code == 19: # "WALABOT_INSTRUMENT_NOT_FOUND"
                 return False
+            else:
+                raise err
         return True
 
-    def setParams(self, rParams, thetaParams, phiParams, thld, mtiMode):
-        """ Set the Walabot's profile, arena parameters, and filter type.
-            Then start the walabot using Start() function.
+    def setParams(self, r, theta, phi, threshold, mti):
+        """ Set the arena Parameters according given ones.
         """
         self.wlbt.SetProfile(self.wlbt.PROF_SENSOR)
-        try:
-            self.wlbt.SetArenaR(*tuple(map(float, rParams)))
-            self.wlbt.SetArenaTheta(*tuple(map(float, thetaParams)))
-            self.wlbt.SetArenaPhi(*tuple(map(float, phiParams)))
-            self.wlbt.SetThreshold(float(thld))
-        except self.wlbt.WalabotError as err:
-            self.master.ctrlPanel.errorVar.set(str(err))
-        if mtiMode:
-            self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_MTI)
-        else:
-            self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_NONE)
+        self.wlbt.SetArenaR(*r)
+        self.wlbt.SetArenaTheta(*theta)
+        self.wlbt.SetArenaPhi(*phi)
+        self.wlbt.SetThreshold(threshold)
+        self.wlbt.SetDynamicImageFilter(mti)
         self.wlbt.Start()
 
     def getArenaParams(self):
