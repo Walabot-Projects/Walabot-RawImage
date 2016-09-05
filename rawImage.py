@@ -50,19 +50,24 @@ COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
 APP_X, APP_Y = 50, 50 # location of top-left corner of window
 CANVAS_LENGTH = 650 # in pixels
 
+
 class MainGUI(tk.Frame):
+    """ Main app class.
+    """
 
     def __init__(self, master):
+        """ Init the GUI components and the Walabot API.
+        """
         tk.Frame.__init__(self, master)
+        self.canvasGUI = CanvasGUI(self)
         self.configGUI = ConfigGUI(self)
         self.controlGUI = ControlGUI(self)
-        self.canvasGUI = CanvasGUI(self)
-        self.configGUI.grid(row=0, column=0, sticky=tk.N)
-        self.controlGUI.grid(row=1, column=0, sticky=(tk.EW, tk.S))
-        self.canvasGUI.grid(row=0, column=1, rowspan=2)
+        self.canvasGUI.pack(side=tk.RIGHT, anchor=tk.NE)
+        self.configGUI.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
+        self.controlGUI.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
         self.wlbt = Walabot(self)
 
-    def startWlbt(self):
+    def initAppLoop(self):
         if self.wlbt.isConnected():
             self.controlGUI.statusVar.set('STATUS_CONNECTED')
             self.update_idletasks()
@@ -76,43 +81,119 @@ class MainGUI(tk.Frame):
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
             self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
             self.configGUI.changeEntriesState('disabled')
-            self.startCycles()
+            self.loop()
         else:
             self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
 
-    def startCycles(self):
+    def loop(self):
         self.controlGUI.statusVar.set('STATUS_SCANNING')
         rawImage = self.wlbt.triggerAndGetRawImageSlice()
         self.canvasGUI.update(rawImage, self.lenOfPhi, self.lenOfR)
         self.controlGUI.fpsVar.set(self.wlbt.getFps())
-        self.cyclesId = self.after_idle(self.startCycles)
+        self.cyclesId = self.after_idle(self.loop)
+
 
 class ConfigGUI(tk.LabelFrame):
 
+    class WalabotParameter(tk.Frame):
+        """ The frame that sets each Walabot parameter line.
+        """
+
+        def __init__(self, master, varVal, minVal, maxVal, defaultVal):
+            """ Init the Labels (parameter name, min/max value) and entry.
+            """
+            tk.Frame.__init__(self, master)
+            tk.Label(self, text=varVal).pack(side=tk.LEFT, padx=(0, 5), pady=1)
+            self.minVal, self.maxVal = minVal, maxVal
+            self.var = tk.StringVar()
+            self.var.set(defaultVal)
+            self.entry = tk.Entry(self, width=7, textvariable=self.var)
+            self.entry.pack(side=tk.LEFT)
+            self.var.trace("w", lambda a, b, c, var=self.var: self.validate())
+            txt = "[{}, {}]".format(minVal, maxVal)
+            tk.Label(self, text=txt).pack(side=tk.LEFT, padx=(5, 20), pady=1)
+
+        def validate(self):
+            """ Checks that the entered value is a valid number and between
+                the min/max values. Change the font color of the value to red
+                if False, else to black (normal).
+            """
+            num = self.var.get()
+            try:
+                num = float(num)
+                if num < self.minVal or num > self.maxVal:
+                    self.entry.config(fg='#'+COLORS[235]); return
+                self.entry.config(fg='gray1')
+            except ValError:
+                self.entry.config(fg='#'+COLORS[235]); return
+
+        def get(self):
+            """ Returns the entry value as a float.
+            """
+            return self.var.get()
+
+        def set(self, value):
+            """ Sets the entry value according to a given one.
+            """
+            self.var.set(value)
+
+        def changeState(self, state):
+            """ Change the entry state according to a given one.
+            """
+            self.entry.configure(state=state)
+
+    class WalabotParameterMTI(tk.Frame):
+        """ The frame that control the Walabot MTI parameter line.
+        """
+
+        def __init__(self, master):
+            """ Init the MTI line (label, radiobuttons).
+            """
+            tk.Frame.__init__(self, master)
+            tk.Label(self, text="MTI      ").pack(side=tk.LEFT)
+            self.mtiVar = tk.IntVar()
+            self.mtiVar.set(0)
+            self.true = tk.Radiobutton(self, text="True",
+                variable=self.mtiVar, value=2)
+            self.false = tk.Radiobutton(self, text="False",
+                variable=self.mtiVar, value=0)
+            self.true.pack(side=tk.LEFT)
+            self.false.pack(side=tk.LEFT)
+
+        def get(self):
+            """ Returns the value of the pressed radiobutton.
+            """
+            return self.mtiVar.get()
+
+        def set(self, value):
+            """ Sets the pressed radiobutton according to a given value.
+            """
+            self.mtiVar.set(value)
+
+        def changeState(self, state):
+            """ Change the state of the radiobuttons according to a given one.
+            """
+            self.true.configure(state=state)
+            self.false.configure(state=state)
+
     def __init__(self, master):
         tk.LabelFrame.__init__(self, master, text='Walabot Configuration')
-        self.rMin = ParameterGUI(self, 'rMin', 1, 1000, 10.0)
-        self.rMax = ParameterGUI(self, 'rMax', 1, 1000, 100.0)
-        self.rRes = ParameterGUI(self, 'rRes', 0.1, 10, 2.0)
-        self.tMin = ParameterGUI(self, 'thetaMin', -90, 90, -20.0)
-        self.tMax = ParameterGUI(self, 'thetaMax', -90, 90, 20.0)
-        self.tRes = ParameterGUI(self, 'thetaRes', 0.1, 10, 10.0)
-        self.pMin = ParameterGUI(self, 'phiMin', -90, 90, -45.0)
-        self.pMax = ParameterGUI(self, 'phiMax', -90, 90, 45.0)
-        self.pRes = ParameterGUI(self, 'phiRes', 0.1, 10, 2.0)
-        self.thld = ParameterGUI(self, 'threshold', 0.1, 100, 15.0)
-        self.mti = MtiGUI(self)
-        self.rMin.grid(row=0, sticky=tk.W)
-        self.rMax.grid(row=1, sticky=tk.W)
-        self.rRes.grid(row=2, sticky=tk.W)
-        self.tMin.grid(row=3, sticky=tk.W)
-        self.tMax.grid(row=4, sticky=tk.W)
-        self.tRes.grid(row=5, sticky=tk.W)
-        self.pMin.grid(row=6, sticky=tk.W)
-        self.pMax.grid(row=7, sticky=tk.W)
-        self.pRes.grid(row=8, sticky=tk.W)
-        self.thld.grid(row=9, sticky=tk.W)
-        self.mti.grid(row=10, sticky=tk.W)
+        self.rMin = self.WalabotParameter(self, 'R     Min', 1, 1000, 10.0)
+        self.rMax = self.WalabotParameter(self, 'R     Max', 1, 1000, 100.0)
+        self.rRes = self.WalabotParameter(self, 'R     Res', 0.1, 10, 2.0)
+        self.tMin = self.WalabotParameter(self, 'Theta Min', -90, 90, -20.0)
+        self.tMax = self.WalabotParameter(self, 'Theta Max', -90, 90, 20.0)
+        self.tRes = self.WalabotParameter(self, 'Theta Res', 0.1, 10, 10.0)
+        self.pMin = self.WalabotParameter(self, 'Phi   Min', -90, 90, -45.0)
+        self.pMax = self.WalabotParameter(self, 'Phi   Max', -90, 90, 45.0)
+        self.pRes = self.WalabotParameter(self, 'Phi   Res', 0.1, 10, 2.0)
+        self.thld = self.WalabotParameter(self, 'Threshold', 0.1, 100, 15.0)
+        self.mti = self.WalabotParameterMTI(self)
+        self.parameters = (self.rMin, self.rMax, self.rRes,
+            self.tMin, self.tMax, self.tRes, self.pMin, self.pMax, self.pRes,
+            self.thld, self.mti)
+        for param in self.parameters:
+            param.pack(anchor=tk.W)
 
     def getParams(self):
         rParams = (self.rMin.get(), self.rMax.get(), self.rRes.get())
@@ -134,104 +215,9 @@ class ConfigGUI(tk.LabelFrame):
         self.thld.set(threshold)
 
     def changeEntriesState(self, state):
-        self.rMin.changeEntryState(state)
-        self.rMax.changeEntryState(state)
-        self.rRes.changeEntryState(state)
-        self.tMin.changeEntryState(state)
-        self.tMax.changeEntryState(state)
-        self.tRes.changeEntryState(state)
-        self.pMin.changeEntryState(state)
-        self.pMax.changeEntryState(state)
-        self.pRes.changeEntryState(state)
-        self.thld.changeEntryState(state)
-        self.mti.changeButtonsState(state)
+        for param in self.parameters:
+            param.changeState(state)
 
-class ParameterGUI(tk.Frame):
-    """ This class is designed to control the parameters inside the
-        ConfigGUI instance.
-    """
-
-    def __init__(self, master, varValue, minValue, maxValue, defaultValue):
-        """ Initialize the parameter, including the label, variable and entry.
-        """
-        tk.Frame.__init__(self, master)
-        tk.Label(self, text=varValue+' = ').pack(side=tk.LEFT)
-        self.minValue, self.maxValue = minValue, maxValue
-        self.var = tk.StringVar()
-        self.var.set(defaultValue)
-        self.entry = tk.Entry(self, width=6, textvariable=self.var)
-        self.entry.pack(side=tk.LEFT)
-        self.var.trace('w', lambda a, b, c, var=self.var:
-            self.validate())
-        tk.Label(self, text=' value between '+str(minValue)).pack(side=tk.LEFT)
-        tk.Label(self, text='and '+str(maxValue)).pack(side=tk.LEFT)
-
-    def validate(self):
-        """ Check the variable value. If it's not a number / not in the allowed
-            parameter range - change the entry font color.
-        """
-        num = self.var.get()
-        try:
-            num = float(num)
-            if num < self.minValue or num > self.maxValue:
-                self.entry.config(fg='#'+COLORS[235]); return
-            self.entry.config(fg='gray1')
-        except ValueError:
-            self.entry.config(fg='#'+COLORS[235]); return
-
-    def get(self):
-        """ Returns the variable value (the entry value).
-        """
-        return self.var.get()
-
-    def set(self, value):
-        """ Sets the variable value (entry value), given a value.
-        """
-        self.var.set(value)
-
-    def changeEntryState(self, state):
-        """ Change the state of 'entry' according to the given state.
-            Arguments:
-                state       most be either 'normal' or 'disabled'
-        """
-        self.entry.configure(state=state)
-
-class MtiGUI(tk.Frame):
-    """ This class is designed to control the mti parameter inside the
-        ConfigGUI instance.
-    """
-
-    def __init__(self, master):
-        """ Initialize the mti parameter, including the label, variable and
-            radiobuttons.
-        """
-        tk.Frame.__init__(self, master)
-        tk.Label(self, text='mti = ').pack(side=tk.LEFT)
-        self.mtiVar = tk.BooleanVar()
-        self.mtiVar.set(0)
-        self.true = tk.Radiobutton(self, text='True', variable=self.mtiVar,
-            value=1)
-        self.false = tk.Radiobutton(self, text='False', variable=self.mtiVar,
-            value=0)
-        self.true.pack(side=tk.LEFT)
-        self.false.pack(side=tk.LEFT)
-
-    def get(self):
-        """ Returns the variable value (the entry value).
-            Returns:
-                mti         True / False according to the mti mode the was set
-                            by the user.
-        """
-        return self.mtiVar.get()
-
-    def set(self, value):
-        """ Sets the variable value (entry value), given a value.
-        """
-        self.mtiVar.set(value)
-
-    def changeButtonsState(self, state):
-        self.true.configure(state=state)
-        self.false.configure(state=state)
 
 class ControlGUI(tk.LabelFrame):
     """ This class is designed to control the control area of the app.
@@ -276,7 +262,7 @@ class ControlGUI(tk.LabelFrame):
         """ Applied when 'Start' button is pressed. Starts the Walabot and
             the app cycles.
         """
-        self.master.startWlbt()
+        self.master.initAppLoop()
 
     def stop(self):
         """ Applied when 'Stop' button in pressed. Stops the Walabot and the
@@ -288,6 +274,7 @@ class ControlGUI(tk.LabelFrame):
             self.master.canvasGUI.reset()
             self.statusVar.set('STATUS_IDLE')
 
+
 class CanvasGUI(tk.LabelFrame):
     """ This class is designed to control the canvas area of the app.
     """
@@ -295,7 +282,7 @@ class CanvasGUI(tk.LabelFrame):
     def __init__(self, master):
         """ Initialize the label-frame and canvas.
         """
-        tk.LabelFrame.__init__(self, master, text='Raw Image Slice: Phi / R')
+        tk.LabelFrame.__init__(self, master, text='Raw Image Slice: R / Phi')
         self.canvas = tk.Canvas(self, width=CANVAS_LENGTH,
                 height=CANVAS_LENGTH)
         self.canvas.pack()
@@ -329,6 +316,7 @@ class CanvasGUI(tk.LabelFrame):
         """ Deletes all the canvas components (colored rectangles).
         """
         self.canvas.delete('all')
+
 
 class Walabot:
     """ This class is designed to control Walabot device using the Walabot SDK.
@@ -413,6 +401,7 @@ class Walabot:
                 fpsVar      Number of frames per seconds.
         """
         return int(self.wlbt.GetAdvancedParameter('FrameRate'))
+
 
 def rawImage():
     """ Main app function. Init the main app class, configure the window
