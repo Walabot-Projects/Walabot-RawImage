@@ -51,7 +51,7 @@ APP_X, APP_Y = 50, 50 # location of top-left corner of window
 CANVAS_LENGTH = 650 # in pixels
 
 
-class MainGUI(tk.Frame):
+class RawImageApp(tk.Frame):
     """ Main app class.
     """
 
@@ -59,41 +59,41 @@ class MainGUI(tk.Frame):
         """ Init the GUI components and the Walabot API.
         """
         tk.Frame.__init__(self, master)
-        self.canvasGUI = CanvasGUI(self)
-        self.configGUI = ConfigGUI(self)
-        self.controlGUI = ControlGUI(self)
+        self.canvasPanel = CanvasPanel(self)
+        self.wlbtPanel = WalabotPanel(self)
+        self.ctrlPanel = ControlPanel(self)
         self.canvasGUI.pack(side=tk.RIGHT, anchor=tk.NE)
-        self.configGUI.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
-        self.controlGUI.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
+        self.wlbtPanel.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
+        self.ctrlPanel.pack(side=tk.TOP, anchor=tk.W, fill=tk.BOTH, pady=10)
         self.wlbt = Walabot(self)
 
     def initAppLoop(self):
         if self.wlbt.isConnected():
-            self.controlGUI.statusVar.set('STATUS_CONNECTED')
+            self.ctrlPanel.statusVar.set('STATUS_CONNECTED')
             self.update_idletasks()
-            params = self.configGUI.getParams()
+            params = self.wlbtPanel.getParams()
             self.wlbt.setParams(*params)
-            self.configGUI.setParams(*self.wlbt.getArenaParams())
+            self.wlbtPanel.setParams(*self.wlbt.getArenaParams())
             if not params[4]: # equals: if not mtiMode
-                self.controlGUI.statusVar.set('STATUS_CALIBRATING')
+                self.ctrlPanel.statusVar.set('STATUS_CALIBRATING')
                 self.update_idletasks()
                 self.wlbt.calibrate()
             self.lenOfPhi, self.lenOfR = self.wlbt.getRawImageSliceDimensions()
             self.canvasGUI.setGrid(self.lenOfPhi, self.lenOfR)
-            self.configGUI.changeEntriesState('disabled')
+            self.wlbtPanel.changeEntriesState('disabled')
             self.loop()
         else:
-            self.controlGUI.statusVar.set('STATUS_DISCONNECTED')
+            self.ctrlPanel.statusVar.set('STATUS_DISCONNECTED')
 
     def loop(self):
-        self.controlGUI.statusVar.set('STATUS_SCANNING')
+        self.ctrlPanel.statusVar.set('STATUS_SCANNING')
         rawImage = self.wlbt.triggerAndGetRawImageSlice()
         self.canvasGUI.update(rawImage, self.lenOfPhi, self.lenOfR)
-        self.controlGUI.fpsVar.set(self.wlbt.getFps())
+        self.ctrlPanel.fpsVar.set(self.wlbt.getFps())
         self.cyclesId = self.after_idle(self.loop)
 
 
-class ConfigGUI(tk.LabelFrame):
+class WalabotPanel(tk.LabelFrame):
 
     class WalabotParameter(tk.Frame):
         """ The frame that sets each Walabot parameter line.
@@ -219,7 +219,7 @@ class ConfigGUI(tk.LabelFrame):
             param.changeState(state)
 
 
-class ControlGUI(tk.LabelFrame):
+class ControlPanel(tk.LabelFrame):
     """ This class is designed to control the control area of the app.
     """
 
@@ -270,12 +270,12 @@ class ControlGUI(tk.LabelFrame):
         """
         if hasattr(self.master, 'cyclesId'):
             self.master.after_cancel(self.master.cyclesId)
-            self.master.configGUI.changeEntriesState('normal')
+            self.master.wlbtPanel.changeEntriesState('normal')
             self.master.canvasGUI.reset()
             self.statusVar.set('STATUS_IDLE')
 
 
-class CanvasGUI(tk.LabelFrame):
+class CanvasPanel(tk.LabelFrame):
     """ This class is designed to control the canvas area of the app.
     """
 
@@ -352,7 +352,7 @@ class Walabot:
             self.wlbt.SetArenaPhi(*tuple(map(float, phiParams)))
             self.wlbt.SetThreshold(float(thld))
         except self.wlbt.WalabotError as err:
-            self.master.controlGUI.errorVar.set(str(err))
+            self.master.ctrlPanel.errorVar.set(str(err))
         if mtiMode:
             self.wlbt.SetDynamicImageFilter(self.wlbt.FILTER_TYPE_MTI)
         else:
@@ -412,7 +412,7 @@ def rawImage():
     iconFile = tk.PhotoImage(file="walabot-icon.png")
     root.tk.call("wm", "iconphoto", root._w, iconFile) # set app icon
     root.option_add("*Font", "TkFixedFont")
-    MainGUI(root).pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    RawImageApp(root).pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     root.geometry("+{}+{}".format(APP_X, APP_Y)) # set window location
     root.update()
     root.minsize(width=root.winfo_reqwidth(), height=root.winfo_reqheight())
