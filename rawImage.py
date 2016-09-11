@@ -124,7 +124,7 @@ class WalabotPanel(tk.LabelFrame):
                 if num < self.minVal or num > self.maxVal:
                     self.entry.config(fg='#'+COLORS[235]); return
                 self.entry.config(fg='gray1')
-            except ValError:
+            except ValueError:
                 self.entry.config(fg='#'+COLORS[235]); return
 
         def get(self):
