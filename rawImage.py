@@ -1,15 +1,16 @@
 from __future__ import print_function, division
 import WalabotAPI as wlbt
-try: # for Python 2
+try:  # for Python 2
     import Tkinter as tk
-except ImportError: # for Python 3
+except ImportError:  # for Python 3
     import tkinter as tk
-try: # for Python 2
+try:  # for Python 2
     range = xrange
 except NameError:
     pass
 
-COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
+COLORS = [
+    "000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "00009F", "0000A3", "0000A7", "0000AB", "0000AF", "0000B3", "0000B7",
     "0000BB", "0000BF", "0000C3", "0000C7", "0000CB", "0000CF", "0000D3",
     "0000D7", "0000DB", "0000DF", "0000E3", "0000E7", "0000EB", "0000EF",
@@ -47,8 +48,8 @@ COLORS = ["000083", "000087", "00008B", "00008F", "000093", "000097", "00009B",
     "A70000", "A30000", "9F0000", "9B0000", "970000", "930000", "8F0000",
     "8B0000", "870000", "830000", "7F0000"]
 
-APP_X, APP_Y = 50, 50 # location of top-left corner of window
-CANVAS_LENGTH = 650 # in pixels
+APP_X, APP_Y = 50, 50  # location of top-left corner of window
+CANVAS_LENGTH = 650  # in pixels
 
 
 class RawImageApp(tk.Frame):
@@ -74,7 +75,7 @@ class RawImageApp(tk.Frame):
             params = self.wlbtPanel.getParams()
             self.wlbt.setParams(*params)
             self.wlbtPanel.setParams(*self.wlbt.getArenaParams())
-            if not params[4]: # equals: if not mtiMode
+            if not params[4]:  # equals: if not mtiMode
                 self.ctrlPanel.statusVar.set('STATUS_CALIBRATING')
                 self.update_idletasks()
                 self.wlbt.calibrate()
@@ -122,10 +123,12 @@ class WalabotPanel(tk.LabelFrame):
             try:
                 num = float(num)
                 if num < self.minVal or num > self.maxVal:
-                    self.entry.config(fg='#'+COLORS[235]); return
+                    self.entry.config(fg='#'+COLORS[235])
+                    return
                 self.entry.config(fg='gray1')
             except ValueError:
-                self.entry.config(fg='#'+COLORS[235]); return
+                self.entry.config(fg='#'+COLORS[235])
+                return
 
         def get(self):
             """ Returns the entry value as a float.
@@ -153,10 +156,10 @@ class WalabotPanel(tk.LabelFrame):
             tk.Label(self, text="MTI      ").pack(side=tk.LEFT)
             self.mtiVar = tk.IntVar()
             self.mtiVar.set(0)
-            self.true = tk.Radiobutton(self, text="True",
-                variable=self.mtiVar, value=2)
-            self.false = tk.Radiobutton(self, text="False",
-                variable=self.mtiVar, value=0)
+            self.true = tk.Radiobutton(
+                self, text="True", variable=self.mtiVar, value=2)
+            self.false = tk.Radiobutton(
+                self, text="False", variable=self.mtiVar, value=0)
             self.true.pack(side=tk.LEFT)
             self.false.pack(side=tk.LEFT)
 
@@ -189,9 +192,9 @@ class WalabotPanel(tk.LabelFrame):
         self.pRes = self.WalabotParameter(self, 'Phi   Res', 0.1, 10, 2.0)
         self.thld = self.WalabotParameter(self, 'Threshold', 0.1, 100, 15.0)
         self.mti = self.WalabotParameterMTI(self)
-        self.parameters = (self.rMin, self.rMax, self.rRes,
-            self.tMin, self.tMax, self.tRes, self.pMin, self.pMax, self.pRes,
-            self.thld, self.mti)
+        self.parameters = (
+            self.rMin, self.rMax, self.rRes, self.tMin, self.tMax, self.tRes,
+            self.pMin, self.pMax, self.pRes, self.thld, self.mti)
         for param in self.parameters:
             param.pack(anchor=tk.W)
 
@@ -283,8 +286,8 @@ class CanvasPanel(tk.LabelFrame):
         """ Initialize the label-frame and canvas.
         """
         tk.LabelFrame.__init__(self, master, text='Raw Image Slice: R / Phi')
-        self.canvas = tk.Canvas(self, width=CANVAS_LENGTH,
-                height=CANVAS_LENGTH)
+        self.canvas = tk.Canvas(
+            self, width=CANVAS_LENGTH, height=CANVAS_LENGTH)
         self.canvas.pack()
         self.canvas.configure(background='#'+COLORS[0])
 
@@ -295,8 +298,11 @@ class CanvasPanel(tk.LabelFrame):
                 sizeY       Number of cells in R axis.
         """
         recHeight, recWidth = CANVAS_LENGTH/sizeX, CANVAS_LENGTH/sizeY
-        self.cells = [[self.canvas.create_rectangle(recWidth*col,
-            recHeight*row, recWidth*(col+1), recHeight*(row+1), width=0)
+        self.cells = [[
+            self.canvas.create_rectangle(
+                recWidth*col, recHeight*row,
+                recWidth*(col+1), recHeight*(row+1),
+                width=0)
             for col in range(sizeY)] for row in range(sizeX)]
 
     def update(self, rawImage, lenOfPhi, lenOfR):
@@ -309,7 +315,8 @@ class CanvasPanel(tk.LabelFrame):
         """
         for i in range(lenOfPhi):
             for j in range(lenOfR):
-                self.canvas.itemconfigure(self.cells[lenOfPhi-i-1][j],
+                self.canvas.itemconfigure(
+                    self.cells[lenOfPhi-i-1][j],
                     fill='#'+COLORS[rawImage[i][j]])
 
     def reset(self):
@@ -335,7 +342,7 @@ class Walabot:
         try:
             self.wlbt.ConnectAny()
         except self.wlbt.WalabotError as err:
-            if err.code == 19: # "WALABOT_INSTRUMENT_NOT_FOUND"
+            if err.code == 19:  # "WALABOT_INSTRUMENT_NOT_FOUND"
                 return False
             else:
                 raise err
@@ -403,10 +410,10 @@ def rawImage():
     root = tk.Tk()
     root.title('Walabot - Raw Image Slice Example')
     iconFile = tk.PhotoImage(file="walabot-icon.png")
-    root.tk.call("wm", "iconphoto", root._w, iconFile) # set app icon
+    root.tk.call("wm", "iconphoto", root._w, iconFile)  # set app icon
     root.option_add("*Font", "TkFixedFont")
     RawImageApp(root).pack(side=tk.TOP, fill=tk.BOTH, expand=True)
-    root.geometry("+{}+{}".format(APP_X, APP_Y)) # set window location
+    root.geometry("+{}+{}".format(APP_X, APP_Y))  # set window location
     root.update()
     root.minsize(width=root.winfo_reqwidth(), height=root.winfo_reqheight())
     root.mainloop()
