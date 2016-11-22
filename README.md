@@ -6,19 +6,15 @@ Specifically, it uses the `rawImage` matrix given by the `GetRawImageSlice()` fu
 * Works on both Python 2 and Python 3.
 * GUI is done with the [tkinter](https://docs.python.org/3.5/library/tkinter.html) library.
 
-## Installing the WalabotAPI Python Library Using pip
+## How to use
+
+1. Install the [Walabot SDK](http://walabot.com/getting-started) and the [WalabotAPI Python library](https://github.com/Walabot-Projects/Walabot-HelloWalabot#how-to-use) using pip.
+6. Run `RawImage.py`.
+
+
+####  Installing the WalabotAPI Python Library
 
 After [installing the WalabotSDK](http://walabot.com/getting-started) on your machine:  
 Simply write one of these two lines into the terminal or cmd depends on your operation system.
-
-### Windows
-```
-python -m pip install "C:\Program Files\Walabot\WalabotSDK\python\WalabotAPI-1.0.21.zip"
-```
-
-### Linux / Raspberry PI
-```
-python -m pip install "/usr/share/walabot/python/WalabotAPI-1.0.21.zip"
-```
 
 ![Screenshot](https://raw.githubusercontent.com/Walabot-Projects/Walabot-RawImage/master/screenshot.png)
