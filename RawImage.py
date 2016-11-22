@@ -409,9 +409,6 @@ def rawImage():
     """
     root = tk.Tk()
     root.title('Walabot - Raw Image Slice Example')
-    iconFile = tk.PhotoImage(file="walabot-icon.png")
-    root.tk.call("wm", "iconphoto", root._w, iconFile)  # set app icon
-    root.option_add("*Font", "TkFixedFont")
     RawImageApp(root).pack(side=tk.TOP, fill=tk.BOTH, expand=True)
     root.geometry("+{}+{}".format(APP_X, APP_Y))  # set window location
     root.update()
